@@ -5,11 +5,34 @@
 	#include <stdlib.h>	
 	#include "func.h"
 	#include "func.c"
+	#define bufsize 1000000
 //	struct ast* head = malloc(sizeof(struct ast*));
         struct ast *p;
+
 %}
 
 %%
+
+"32" {
+      append(32,p);
+      p = p->next;
+}
+
+
+"33" {
+      append(33,p);
+      p = p->next;
+}
+
+"44" {
+      append(44,p);
+      p = p->next;
+}
+
+"46" {
+      append(46,p);
+      p = p->next;
+}
 	
 "48" {
       append(48,p);
@@ -325,31 +348,35 @@
 
 %%
 
-int function()
+int function(char s[],FILE *towrite)
 {
 
-	FILE *towrite = fopen("trivial.txt","w");
+	
 	printf("%s","Lexer start working\n");
 
-	char s[80] = "input.txt";
-	if((yyin = fopen(s,"rb"))==NULL)
+	//char s[80] = "input.txt";
+	if((yyin = fopen(s,"r"))==NULL)
 	{
 		printf("File %s cannot be opened.\n",s);
 	}
 
 	struct ast* head = malloc(sizeof(struct ast*));
 	p = head;
-
-
 		
 	yylex();
 	
-
-
 	while(head->next)
 	{
 	head = head->next;
 	int n = head->value;
+	if(n==32)
+	fprintf(towrite,"%c"," ");
+	if(n==33)
+        fprintf(towrite,"%c","!");
+	if(n==44)
+        fprintf(towrite,"%c",",");
+	if(n==46)
+        fprintf(towrite,"%c",".");
 	if(48<=n && n<=57 )
 	fprintf(towrite,"%d",head->value-48 );
 	else if(65<=n && n<=90)
@@ -359,14 +386,62 @@ int function()
 	else break;
 	}
 
-	fclose(towrite);
+
 	printf("%s","Lexer completed.\n");
 	return 0;
 }
 
+void translation(FILE *in,FILE *out)
+{
+	int flag = 1;
+	int a[8],b,c;
+	while(flag)
+	{	
+		int i=7;
+		for( i= 7 ; i >= 0 ; i--)
+		{
+			if ((b = fgetc(in)) != EOF)
+			  a[i] = (b-'0'); 
+			else flag=0;
+		}
+		c = a[0] + 2*a[1] + 4*a[2] + 8*a[3]
+		+16*a[4] + 32*a[5]+64*a[6] + 128*a[7];
+		//printf("%d",c);                		   
+                if(c>100)
+			{
+			int tmp = c/100;
+			fputc(tmp+'0',out);
+			 c=c%100;
+			}
+		if(c>10)
+                        {
+                        int tmp = c/10;
+                        fputc(tmp+'0',out);
+                         c=c%10;
+                        }
+		fputc(c+'0',out);
+		fputc(' ',out);
+	}
+	printf("translation finished.\n");
+	
+}
+
+
+
+
 int main()
 {
-	function;
+	FILE *binary = fopen("binary.txt","r");
+	//the input source file
+        	FILE *string = fopen("string.txt","w");
+	
+	FILE *towrite = fopen("trivial.txt","w");
+	translation(binary,string);
+
+	function("string.txt",towrite);
+	fclose(string);
+	fclose(towrite);
+	fclose(binary);
 	return 0;
 }
 
